@@ -1,5 +1,11 @@
 import React from 'react';
+import { Grid } from '@mui/material';
 
-export const Screen = ({ children }: { children: React.ReactNode }) => {
-  return <div>{children}</div>;
-};
+import { Header } from 'components';
+
+export const Screen = ({ children }: { children: React.ReactNode }) => (
+  <Grid container direction={'column'}>
+    <Header />
+    {children}
+  </Grid>
+);

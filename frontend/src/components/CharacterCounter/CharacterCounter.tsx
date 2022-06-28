@@ -1,5 +1,5 @@
 import { useRecoilState } from 'recoil';
-import { textState } from 'store/atoms/app';
+import { textState } from 'atoms/app';
 
 export function CharacterCounter() {
   const [text, setText] = useRecoilState(textState);
