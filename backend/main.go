@@ -1,67 +1,39 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
+    "fmt"
+    "net/http"
 
-	"github.com/gorilla/websocket"
+    "chat/pkg/websocket"
 )
 
-// We'll need to define an Upgrader this will require a Read and Write buffer size
-var upgrader = websocket.Upgrader{
-	ReadBufferSize: 1024,
-	WriteBufferSize: 1024,
+func serveWs(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
+    fmt.Println("WebSocket Endpoint Hit")
+    conn, err := websocket.Upgrade(w, r)
+    if err != nil {
+        fmt.Fprintf(w, "%+v\n", err)
+    }
 
-	// We'll need to check the origin of our connection
-  // this will allow us to make requests from our React
-  // development server to here.
-  // For now, we'll do no checking and just allow any connection
-	CheckOrigin: func(r *http.Request) bool {return true},
-}
+    client := &websocket.Client{
+        Conn: conn,
+        Pool: pool,
+    }
 
-// define a reader which will listen for new messages being sent to our WebSocket endpoint
-func reader(conn *websocket.Conn) {
-	for {
-		// read in message
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		// print our that message for clarity
-		fmt.Println(string(p))
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-}
-
-// define our Websocket endpoint
-
-func serveWs(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Host)
-
-	// upgrade this connection to a Websocket connection
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-	// listen indefinitely for new messages coming through on our Websocket connection
-	reader(ws)
+    pool.Register <- client
+    client.Read()
 }
 
 func setupRoutes() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "simple server")
-	})
-	// mape our '/ws' endpoint to the 'serveWs' function
-	http.HandleFunc("/ws", serveWs)
+    pool := websocket.NewPool()
+    go pool.Start()
+
+    http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+        serveWs(pool, w, r)
+    })
 }
 
 func main() {
-	setupRoutes()
-	http.ListenAndServe(":8080", nil)
+    fmt.Println("Distributed Chat App v0.01")
+    setupRoutes()
+    http.ListenAndServe(":8080", nil)
 }

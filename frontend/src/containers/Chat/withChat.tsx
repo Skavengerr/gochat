@@ -8,14 +8,12 @@ type Props = { chatHistory: string[] };
 
 export const withChat = (Component: React.FC<Props>) => () => {
   const [chatHistory, setChatHistory] = useRecoilState(chatHistoryState);
-  console.log('🚀 ~ file: withChat.tsx ~ line 7 ~ withChat ~ chatHistory', chatHistory);
 
   useEffect(() => {
     connect((message: any) => {
-      console.log('🚀 ~ file: chat.ts ~ line 10 ~ awaitconnect ~ message', message);
       setChatHistory([...chatHistory, message.data]);
     });
-  }, []);
+  }, [chatHistory, setChatHistory]);
 
   const props: Props = { chatHistory };
 
